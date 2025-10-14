@@ -5,6 +5,7 @@ import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { forgotPasswordMailgenContent, sendEmail } from "../utils/mail";
 interface RegisterType {
   name: string;
   email: string;
@@ -84,7 +85,6 @@ const registerUser = asyncHandler(
   async (req: Request<{}, {}, RegisterType>, res: Response) => {
     const { name, password } = req.body;
     const email = req.body.email?.toLowerCase(); // Normalize email
-    console.log("The checking value");
     // Validate all required fields
     if (!name || !email || !password) {
       throw new ApiError(400, "Name, email, and password are required");
@@ -235,9 +235,11 @@ const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
 const forgotPassword = asyncHandler(
   async (req: Request<{}, {}, ForgotPasswordBody>, res: Response) => {
     const email = req.body.email?.toLowerCase();
+
     if (!email) throw new ApiError(400, "Email is required");
 
     const user = await User.findOne({ email });
+
     if (!user) {
       // Respond with 200 to avoid user enumeration
       return res
@@ -254,11 +256,23 @@ const forgotPassword = asyncHandler(
     const { unHashedToken, hashedToken, tokenExpiry } =
       user.generateTemporaryToken();
 
+    console.log(unHashedToken, hashedToken, tokenExpiry);
+
     user.forgotPasswordToken = hashedToken;
     user.forgotPasswordExpiry = new Date(tokenExpiry);
     await user.save({ validateBeforeSave: false });
 
     // TODO: Send email with unHashedToken in a link
+
+    await sendEmail({
+      email: user?.email,
+      subject: "Password reset request",
+      mailgenContent: forgotPasswordMailgenContent({
+        username: user.username,
+        passwordResetUrl: `${process.env
+          .FORGOT_PASSWORD_REDIRECT_URL!}/${unHashedToken}`,
+      }),
+    });
     return res
       .status(200)
       .json(
@@ -274,6 +288,7 @@ const forgotPassword = asyncHandler(
 const resetPassword = asyncHandler(
   async (req: Request<{}, {}, ResetPasswordBody>, res: Response) => {
     const { token, newPassword } = req.body;
+    console.log("The token", token, newPassword);
     if (!token || !newPassword) {
       throw new ApiError(400, "Token and newPassword are required");
     }
@@ -282,7 +297,8 @@ const resetPassword = asyncHandler(
     }
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
+    console.log("The hashedToken is ", hashedToken);
+    console.log("The new Date is ", new Date());
     const user = await User.findOne({
       forgotPasswordToken: hashedToken,
       forgotPasswordExpiry: { $gt: new Date() },
@@ -307,7 +323,7 @@ const verifyEmail = asyncHandler(
     if (!token) throw new ApiError(400, "Token is required");
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
+   
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
       emailVerificationExpiry: { $gt: new Date() },

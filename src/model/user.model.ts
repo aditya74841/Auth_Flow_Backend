@@ -168,17 +168,20 @@ function looksLikeBcryptHash(value: string): boolean {
 userSchema.pre("save", async function (next) {
   const user = this as IUserDocument;
 
-  // Enforce conditional requirement: if EMAIL_PASSWORD, password must exist
+  // Only process password if modified
+  if (!user.isModified("password") || !user.password) {
+    return next();
+  }
+
   if (user.loginType === UserLoginType.EMAIL_PASSWORD && !user.password) {
     return next(new Error("Password is required for email/password login"));
   }
-
-  if (!user.isModified("password") || !user.password) return next();
 
   if (looksLikeBcryptHash(user.password)) return next();
 
   const rounds = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
   user.password = await bcrypt.hash(user.password, rounds);
+
   next();
 });
 
