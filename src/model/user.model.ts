@@ -69,7 +69,7 @@ const userSchema = new Schema<IUserDocument, IUserModel, IUserMethods>(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
+      // index: true,
       match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please provide a valid email address"],
     },
     username: {
@@ -152,7 +152,7 @@ const userSchema = new Schema<IUserDocument, IUserModel, IUserMethods>(
 );
 
 // Indexes
-userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ email: 1 });
 // Partial unique index for username only when present (non-null/non-empty)
 userSchema.index(
   { username: 1 },

@@ -84,7 +84,7 @@ const registerUser = asyncHandler(
   async (req: Request<{}, {}, RegisterType>, res: Response) => {
     const { name, password } = req.body;
     const email = req.body.email?.toLowerCase(); // Normalize email
-
+    console.log("The checking value");
     // Validate all required fields
     if (!name || !email || !password) {
       throw new ApiError(400, "Name, email, and password are required");
@@ -110,9 +110,11 @@ const registerUser = asyncHandler(
     // Create new user (password hashed by model pre-save hook)
     const newUser: IUserDocument = await User.create({ name, email, password });
 
-    return res.status(201).json(
-      new ApiResponse(201, newUser.toJSON(), "User registered successfully")
-    );
+    return res
+      .status(201)
+      .json(
+        new ApiResponse(201, newUser.toJSON(), "User registered successfully")
+      );
   }
 );
 
@@ -126,7 +128,9 @@ const loginUser = asyncHandler(
     }
 
     // Fetch user with password for verification
-    const user: IUserDocument | null = await User.findOne({ email: normalizedEmail }).select("+password");
+    const user: IUserDocument | null = await User.findOne({
+      email: normalizedEmail,
+    }).select("+password");
 
     // Use generic error to avoid user enumeration
     if (!user) {
@@ -161,9 +165,9 @@ const loginUser = asyncHandler(
     res.cookie("refreshToken", refreshToken, cookieOptionsRefresh);
 
     // Respond with sanitized user
-    return res.status(200).json(
-      new ApiResponse(200, user.toJSON(), "User logged in successfully")
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user.toJSON(), "User logged in successfully"));
   }
 );
 const refreshAccessToken = asyncHandler(
@@ -199,9 +203,9 @@ const refreshAccessToken = asyncHandler(
 
     res.cookie("accessToken", accessToken, cookieOptionsAccess);
 
-    return res.status(200).json(
-      new ApiResponse(200, { accessToken }, "Access token refreshed")
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { accessToken }, "Access token refreshed"));
   }
 );
 
@@ -236,9 +240,15 @@ const forgotPassword = asyncHandler(
     const user = await User.findOne({ email });
     if (!user) {
       // Respond with 200 to avoid user enumeration
-      return res.status(200).json(
-        new ApiResponse(200, {}, "If the account exists, a reset link has been sent")
-      );
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            {},
+            "If the account exists, a reset link has been sent"
+          )
+        );
     }
 
     const { unHashedToken, hashedToken, tokenExpiry } =
@@ -249,9 +259,15 @@ const forgotPassword = asyncHandler(
     await user.save({ validateBeforeSave: false });
 
     // TODO: Send email with unHashedToken in a link
-    return res.status(200).json(
-      new ApiResponse(200, { resetToken: unHashedToken }, "Password reset initiated")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { resetToken: unHashedToken },
+          "Password reset initiated"
+        )
+      );
   }
 );
 
@@ -318,14 +334,23 @@ const resendVerificationEmail = asyncHandler(
       // Avoid enumeration
       return res
         .status(200)
-        .json(new ApiResponse(200, {}, "If the account exists, an email has been sent"));
+        .json(
+          new ApiResponse(
+            200,
+            {},
+            "If the account exists, an email has been sent"
+          )
+        );
     }
 
     if (user.isEmailVerified) {
-      return res.status(200).json(new ApiResponse(200, {}, "Email already verified"));
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Email already verified"));
     }
 
-    const { unHashedToken, hashedToken, tokenExpiry } = user.generateTemporaryToken();
+    const { unHashedToken, hashedToken, tokenExpiry } =
+      user.generateTemporaryToken();
     user.emailVerificationToken = hashedToken;
     user.emailVerificationExpiry = new Date(tokenExpiry);
     await user.save({ validateBeforeSave: false });
@@ -333,7 +358,13 @@ const resendVerificationEmail = asyncHandler(
     // TODO: email the verification token
     return res
       .status(200)
-      .json(new ApiResponse(200, { verificationToken: unHashedToken }, "Verification email sent"));
+      .json(
+        new ApiResponse(
+          200,
+          { verificationToken: unHashedToken },
+          "Verification email sent"
+        )
+      );
   }
 );
 
