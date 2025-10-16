@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response } from "express";
 import userRouter from "./routes/user.routes";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -19,8 +19,20 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health Check Route
+app.get("/health-check", (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    message: "Server is running",
+  });
+});
+
+// API Routes
 app.use("/api/v1/users", userRouter);
 
+// Error Handler (should be last)
 app.use(errorHandler);
 
 export default app;
