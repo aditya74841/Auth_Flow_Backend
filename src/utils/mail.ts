@@ -49,36 +49,70 @@ const sendEmail = async (options: optionsType) => {
   }
 };
 interface ForgotPasswordType {
-    username: string | undefined;
-    passwordResetUrl: string;
-  }
-  
+  username: string | undefined;
+  passwordResetUrl: string;
+}
 
-  const forgotPasswordMailgenContent = ({
-    username,
-    passwordResetUrl,
-  }: ForgotPasswordType): Mailgen.Content => {
-    return {
-      body: {
-        name: username,
-        intro: "We received a request to reset the password for your account.",
-        action: {
-          instructions:
-            "To reset your password, click the button below or use the following link:",
-          button: {
-            color: "#22BC66",
-            text: "Reset Password",
-            link: passwordResetUrl,
-          },
+const forgotPasswordMailgenContent = ({
+  username,
+  passwordResetUrl,
+}: ForgotPasswordType): Mailgen.Content => {
+  return {
+    body: {
+      name: username,
+      intro: "We received a request to reset the password for your account.",
+      action: {
+        instructions:
+          "To reset your password, click the button below or use the following link:",
+        button: {
+          color: "#22BC66",
+          text: "Reset Password",
+          link: passwordResetUrl,
         },
-        outro:
-          "Need help, or have questions? Just reply to this email — we'd love to help.",
       },
-    };
+      outro:
+        "Need help, or have questions? Just reply to this email — we'd love to help.",
+    },
   };
+};
 
+interface EmailVerificationType {
+  username: string | undefined;
+  verificationUrl: string;
+}
+
+/**
+ *
+ * @param {string} username
+ * @param {string} verificationUrl
+ * @returns {Mailgen.Content}
+ * @description It designs the email verification mail
+ */
+const emailVerificationMailgenContent = ({
+  username,
+  verificationUrl,
+}: EmailVerificationType): Mailgen.Content => {
+  return {
+    body: {
+      name: username,
+      intro: "Welcome to our app! We're very excited to have you on board.",
+      action: {
+        instructions:
+          "To verify your email please click on the following button:",
+        button: {
+          color: "#22BC66", // Optional action button color
+          text: "Verify your email",
+          link: verificationUrl,
+        },
+      },
+      outro:
+        "Need help, or have questions? Just reply to this email, we'd love to help.",
+    },
+  };
+};
 
 export {
-    sendEmail,
-    forgotPasswordMailgenContent
-}
+  sendEmail,
+  forgotPasswordMailgenContent,
+  emailVerificationMailgenContent,
+};

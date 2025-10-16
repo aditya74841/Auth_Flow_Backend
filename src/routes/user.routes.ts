@@ -21,12 +21,16 @@ router.post("/login", loginUser);
 router.post("/refresh", refreshAccessToken);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
-router.post("/verify-email", verifyEmail);
-router.post("/resend-verification", resendVerificationEmail);
+router.get("/verify-email/:token", verifyEmail);
+// router.post("/resend-verification", resendVerificationEmail);
 
 // Authenticated routes
+router.get("/resend-verification", verifyJWT, resendVerificationEmail);
+
 router.get("/me", verifyJWT, getCurrentUser);
-router.post("/logout", verifyJWT, logoutUser);
+// router.get("/logout", verifyJWT, logoutUser);
+router.get("/logout", verifyJWT, logoutUser);
+
 router.post("/change-password", verifyJWT, changePassword);
 
 export default router;

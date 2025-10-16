@@ -29,7 +29,7 @@ interface IUser {
   forgotPasswordToken?: string;
   forgotPasswordExpiry?: Date;
   emailVerificationToken?: string;
-  emailVerificationExpiry?: Date;
+  emailVerificationExpiry?: Date | number;
 }
 
 // Instance methods available on User documents
@@ -70,7 +70,10 @@ const userSchema = new Schema<IUserDocument, IUserModel, IUserMethods>(
       lowercase: true,
       trim: true,
       // index: true,
-      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please provide a valid email address"],
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        "Please provide a valid email address",
+      ],
     },
     username: {
       type: String,
@@ -108,7 +111,10 @@ const userSchema = new Schema<IUserDocument, IUserModel, IUserMethods>(
     },
     avatar: {
       type: {
-        url: { type: String, default: "https://via.placeholder.com/200x200.png" },
+        url: {
+          type: String,
+          default: "https://via.placeholder.com/200x200.png",
+        },
         localPath: { type: String, default: "" },
       },
       default: undefined,
@@ -236,9 +242,9 @@ userSchema.methods.generateTemporaryToken = function () {
   return { unHashedToken, hashedToken, tokenExpiry };
 };
 
-export const User: Model<IUserDocument> = mongoose.model<IUserDocument, IUserModel>(
-  "User",
-  userSchema
-);
+export const User: Model<IUserDocument> = mongoose.model<
+  IUserDocument,
+  IUserModel
+>("User", userSchema);
 
 export type { IUser, IUserDocument, IUserMethods, IUserModel };

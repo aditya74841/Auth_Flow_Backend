@@ -23,7 +23,10 @@ function getBearerToken(req: Request): string | undefined {
 
 export const verifyJWT: RequestHandler = asyncHandler(
   async (req: Request, _res: Response, next: NextFunction) => {
-    const cookieAccess = (req as any).cookies?.accessToken as string | undefined;
+    // Prefer secure cookie first, then Authorization header
+
+    console.log("The checking is ")
+    const cookieAccess = req.cookies?.accessToken as string | undefined;
     const bearerToken = getBearerToken(req);
     const token = cookieAccess || bearerToken;
 
@@ -33,7 +36,10 @@ export const verifyJWT: RequestHandler = asyncHandler(
 
     const secret = process.env.ACCESS_TOKEN_SECRET;
     if (!secret) {
-      throw new ApiError(500, "Server misconfiguration: ACCESS_TOKEN_SECRET is missing");
+      throw new ApiError(
+        500,
+        "Server misconfiguration: ACCESS_TOKEN_SECRET is missing"
+      );
     }
 
     let payload: any;

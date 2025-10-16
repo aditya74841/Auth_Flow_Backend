@@ -5,7 +5,11 @@ import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { forgotPasswordMailgenContent, sendEmail } from "../utils/mail";
+import {
+  emailVerificationMailgenContent,
+  forgotPasswordMailgenContent,
+  sendEmail,
+} from "../utils/mail";
 interface RegisterType {
   name: string;
   email: string;
@@ -109,7 +113,26 @@ const registerUser = asyncHandler(
 
     // Create new user (password hashed by model pre-save hook)
     const newUser: IUserDocument = await User.create({ name, email, password });
+    const { unHashedToken, hashedToken, tokenExpiry } =
+      newUser.generateTemporaryToken();
 
+    console.log("The Temporary Token", unHashedToken, hashedToken, tokenExpiry);
+
+    console.log(" The type of", typeof tokenExpiry);
+
+    newUser.emailVerificationToken = hashedToken;
+    newUser.emailVerificationExpiry = new Date(tokenExpiry);
+    await newUser.save({ validateBeforeSave: false });
+    await sendEmail({
+      email: newUser?.email,
+      subject: "Please verify your email",
+      mailgenContent: emailVerificationMailgenContent({
+        username: newUser.name,
+        verificationUrl: `${req.protocol}://${req.get(
+          "host"
+        )}/api/v1/users/verify-email/${unHashedToken}`,
+      }),
+    });
     return res
       .status(201)
       .json(
@@ -164,6 +187,7 @@ const loginUser = asyncHandler(
     res.cookie("accessToken", accessToken, cookieOptionsAccess);
     res.cookie("refreshToken", refreshToken, cookieOptionsRefresh);
 
+
     // Respond with sanitized user
     return res
       .status(200)
@@ -210,6 +234,7 @@ const refreshAccessToken = asyncHandler(
 );
 
 const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+  console.log(",dfkfbdkffd")
   const isProd = process.env.NODE_ENV === "production";
   const cookieOptions = {
     httpOnly: true,
@@ -228,6 +253,7 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
 const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
   // verifyJWT middleware populates req.user
+  console.log("Checking")
   if (!req.user) throw new ApiError(401, "Unauthorized");
   return res.status(200).json(new ApiResponse(200, req.user.toJSON(), "OK"));
 });
@@ -288,7 +314,6 @@ const forgotPassword = asyncHandler(
 const resetPassword = asyncHandler(
   async (req: Request<{}, {}, ResetPasswordBody>, res: Response) => {
     const { token, newPassword } = req.body;
-    console.log("The token", token, newPassword);
     if (!token || !newPassword) {
       throw new ApiError(400, "Token and newPassword are required");
     }
@@ -318,12 +343,17 @@ const resetPassword = asyncHandler(
 );
 
 const verifyEmail = asyncHandler(
-  async (req: Request<{}, {}, VerifyEmailBody>, res: Response) => {
-    const { token } = req.body;
+  async (req: Request<VerifyEmailBody>, res: Response) => {
+    const { token } = req.params;
     if (!token) throw new ApiError(400, "Token is required");
 
+    // const { verificationToken  } = req.params;
+
+    // if (!verificationToken) {
+    //   throw new ApiError(400, "Email verification token is missing");
+    // }
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-   
+
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
       emailVerificationExpiry: { $gt: new Date() },
@@ -341,11 +371,10 @@ const verifyEmail = asyncHandler(
 );
 
 const resendVerificationEmail = asyncHandler(
-  async (req: Request<{}, {}, ResendVerificationBody>, res: Response) => {
-    const email = req.body.email?.toLowerCase();
-    if (!email) throw new ApiError(400, "Email is required");
+  async (req: Request, res: Response) => {
+    const user = await User.findById(req.user?._id);
 
-    const user = await User.findOne({ email });
+ 
     if (!user) {
       // Avoid enumeration
       return res
@@ -371,7 +400,16 @@ const resendVerificationEmail = asyncHandler(
     user.emailVerificationExpiry = new Date(tokenExpiry);
     await user.save({ validateBeforeSave: false });
 
-    // TODO: email the verification token
+    await sendEmail({
+      email: user?.email,
+      subject: "Please verify your email",
+      mailgenContent: emailVerificationMailgenContent({
+        username: user.name,
+        verificationUrl: `${req.protocol}://${req.get(
+          "host"
+        )}/api/v1/users/verify-email/${unHashedToken}`,
+      }),
+    });
     return res
       .status(200)
       .json(
