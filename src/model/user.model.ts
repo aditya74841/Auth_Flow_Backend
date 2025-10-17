@@ -158,7 +158,7 @@ const userSchema = new Schema<IUserDocument, IUserModel, IUserMethods>(
 );
 
 // Indexes
-userSchema.index({ email: 1 });
+// userSchema.index({ email: 1 });
 // Partial unique index for username only when present (non-null/non-empty)
 userSchema.index(
   { username: 1 },
