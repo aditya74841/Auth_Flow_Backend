@@ -116,9 +116,7 @@ const registerUser = asyncHandler(
     const { unHashedToken, hashedToken, tokenExpiry } =
       newUser.generateTemporaryToken();
 
-    console.log("The Temporary Token", unHashedToken, hashedToken, tokenExpiry);
 
-    console.log(" The type of", typeof tokenExpiry);
 
     newUser.emailVerificationToken = hashedToken;
     newUser.emailVerificationExpiry = new Date(tokenExpiry);
@@ -234,7 +232,6 @@ const refreshAccessToken = asyncHandler(
 );
 
 const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  console.log(",dfkfbdkffd")
   const isProd = process.env.NODE_ENV === "production";
   const cookieOptions = {
     httpOnly: true,
@@ -253,7 +250,6 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
 const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
   // verifyJWT middleware populates req.user
-  console.log("Checking")
   if (!req.user) throw new ApiError(401, "Unauthorized");
   return res.status(200).json(new ApiResponse(200, req.user.toJSON(), "OK"));
 });
@@ -322,8 +318,6 @@ const resetPassword = asyncHandler(
     }
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-    console.log("The hashedToken is ", hashedToken);
-    console.log("The new Date is ", new Date());
     const user = await User.findOne({
       forgotPasswordToken: hashedToken,
       forgotPasswordExpiry: { $gt: new Date() },

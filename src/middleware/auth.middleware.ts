@@ -25,7 +25,6 @@ export const verifyJWT: RequestHandler = asyncHandler(
   async (req: Request, _res: Response, next: NextFunction) => {
     // Prefer secure cookie first, then Authorization header
 
-    console.log("The checking is ")
     const cookieAccess = req.cookies?.accessToken as string | undefined;
     const bearerToken = getBearerToken(req);
     const token = cookieAccess || bearerToken;

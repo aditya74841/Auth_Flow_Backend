@@ -28,7 +28,14 @@ app.get("/health-check", (req: Request, res: Response) => {
     message: "Server is running",
   });
 });
-
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    message: "Server is running",
+  });
+});
 // API Routes
 app.use("/api/v1/users", userRouter);
 
